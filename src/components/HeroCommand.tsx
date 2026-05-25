@@ -251,7 +251,7 @@ export function HeroCommand({
 
       <div className="site-chrome">
         <span>PREIPO</span>
-        <b>PREIPO.xyz</b>
+        <b>PREIPO.fyi</b>
       </div>
       <div className="preipo-explainer">
         <p>
