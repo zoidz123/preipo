@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/herocommand.tsx","./src/components/researchsections.tsx","./src/components/socialfeedsection.tsx","./src/components/spacexpillars.tsx","./src/lib/equities.test.ts","./src/lib/equities.ts","./src/lib/social-feed.ts","./src/lib/spcx.test.ts","./src/lib/spcx.ts"],"version":"5.9.3"}

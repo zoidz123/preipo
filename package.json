@@ -1,0 +1,27 @@
+{
+  "name": "pluto-pre-ipo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "top-us-equities": "node scripts/fetch-largest-us-equities.mjs",
+    "x:spacex-hot": "node scripts/fetch-x-spacex-hot.mjs",
+    "test": "vitest",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.1.1",
+    "lightweight-charts": "^5.2.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "vitest": "^4.0.14"
+  }
+}
