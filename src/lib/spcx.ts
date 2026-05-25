@@ -1,6 +1,10 @@
 export const HYPERLIQUID_INFO_URL = "https://api.hyperliquid.xyz/info";
 export const SPCX_COIN = "xyz:SPCX";
 export const S1_COMMON_SHARE_BASE = 12_535_298_410;
+export const REPORTED_IPO_VALUATION_RANGE = {
+  low: 1_750_000_000_000,
+  high: 2_000_000_000_000,
+};
 export const IPO_REFERENCE_DATE = "2026-06-12T16:00:00-04:00";
 export const SPCX_TIMEFRAMES = ["1D", "1W", "1M"] as const;
 
@@ -79,6 +83,10 @@ export function getCandleAtRatio(candles: SpcxCandle[], ratio: number): SpcxCand
 
 export function calculateImpliedValuation(close: number | null): number | null {
   return close === null ? null : close * S1_COMMON_SHARE_BASE;
+}
+
+export function calculatePriceFromValuation(valuation: number): number {
+  return valuation / S1_COMMON_SHARE_BASE;
 }
 
 export function calculateOpenInterestNotional(openInterest: number | null, price: number | null): number | null {

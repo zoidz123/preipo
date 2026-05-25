@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   S1_COMMON_SHARE_BASE,
+  REPORTED_IPO_VALUATION_RANGE,
   calculateImpliedValuation,
+  calculatePriceFromValuation,
   calculateOpenInterestNotional,
   extractSpcxMarketContext,
   getCandleWindow,
@@ -23,6 +25,11 @@ describe("SPCX market helpers", () => {
   it("calculates implied valuation from S-1 Class A plus Class B share base", () => {
     expect(S1_COMMON_SHARE_BASE).toBe(12_535_298_410);
     expect(calculateImpliedValuation(207.17)).toBeCloseTo(2_596_937_771_599.7, 1);
+  });
+
+  it("converts the reported IPO valuation range into SPCX prices", () => {
+    expect(calculatePriceFromValuation(REPORTED_IPO_VALUATION_RANGE.low)).toBeCloseTo(139.6058, 4);
+    expect(calculatePriceFromValuation(REPORTED_IPO_VALUATION_RANGE.high)).toBeCloseTo(159.5495, 4);
   });
 
   it("converts Hyperliquid open interest units into notional dollars", () => {

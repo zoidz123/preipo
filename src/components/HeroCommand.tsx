@@ -4,7 +4,9 @@ import {
   ColorType,
   createChart,
   CrosshairMode,
+  LineSeries,
   type CandlestickData,
+  type LineData,
   type UTCTimestamp,
 } from "lightweight-charts";
 import heroArtwork from "../assets/retro-space-race-hero.png";
@@ -12,9 +14,11 @@ import hyperliquidWordmark from "../assets/hyperliquid-wordmark.png";
 import {
   calculateImpliedValuation,
   calculateOpenInterestNotional,
+  calculatePriceFromValuation,
   formatCurrency,
   formatValuation,
   IPO_REFERENCE_DATE,
+  REPORTED_IPO_VALUATION_RANGE,
   SPCX_TIMEFRAMES,
   type SpcxMarketContext,
   type SpcxCandle,
@@ -52,6 +56,11 @@ function formatTimestamp(time: number) {
 function toChartTime(time: number) {
   return Math.floor(time / 1000) as UTCTimestamp;
 }
+
+const REPORTED_IPO_PRICE_RANGE = {
+  low: calculatePriceFromValuation(REPORTED_IPO_VALUATION_RANGE.low),
+  high: calculatePriceFromValuation(REPORTED_IPO_VALUATION_RANGE.high),
+};
 
 function MissionChart({
   candles,
@@ -154,12 +163,51 @@ function MissionChart({
       close: candle.close,
     }));
     series.setData(chartData);
+
+    const rangeScaleOptions = {
+      color: "rgba(0, 0, 0, 0)",
+      lastValueVisible: false,
+      priceLineVisible: false,
+      crosshairMarkerVisible: false,
+    };
+    const lowRangeScaleSeries = chart.addSeries(LineSeries, rangeScaleOptions);
+    const highRangeScaleSeries = chart.addSeries(LineSeries, rangeScaleOptions);
+    const lowRangeData: LineData[] = chartData.map((point) => ({ time: point.time, value: REPORTED_IPO_PRICE_RANGE.low }));
+    const highRangeData: LineData[] = chartData.map((point) => ({ time: point.time, value: REPORTED_IPO_PRICE_RANGE.high }));
+    lowRangeScaleSeries.setData(lowRangeData);
+    highRangeScaleSeries.setData(highRangeData);
+
+    const rangeBand = document.createElement("div");
+    rangeBand.className = "ipo-range-band";
+    const rangeLabel = document.createElement("span");
+    rangeLabel.textContent = `Reported IPO range ${formatCurrency(REPORTED_IPO_PRICE_RANGE.low, false)}-${formatCurrency(
+      REPORTED_IPO_PRICE_RANGE.high,
+      false,
+    )}`;
+    rangeBand.appendChild(rangeLabel);
+    container.appendChild(rangeBand);
+
+    const updateRangeBand = () => {
+      const highY = series.priceToCoordinate(REPORTED_IPO_PRICE_RANGE.high);
+      const lowY = series.priceToCoordinate(REPORTED_IPO_PRICE_RANGE.low);
+      if (highY === null || lowY === null) {
+        rangeBand.hidden = true;
+        return;
+      }
+
+      rangeBand.hidden = false;
+      rangeBand.style.top = `${Math.min(highY, lowY)}px`;
+      rangeBand.style.height = `${Math.max(4, Math.abs(lowY - highY))}px`;
+    };
+
     chart.timeScale().fitContent();
+    updateRangeBand();
 
     const resizeChart = () => {
       const { height, width } = container.getBoundingClientRect();
       chart.resize(Math.max(1, Math.floor(width)), Math.max(1, Math.floor(height)));
       chart.timeScale().fitContent();
+      updateRangeBand();
     };
 
     const resizeObserver = new ResizeObserver(() => {
@@ -168,6 +216,7 @@ function MissionChart({
     resizeObserver.observe(container);
     window.addEventListener("orientationchange", resizeChart);
     window.addEventListener("resize", resizeChart);
+    chart.timeScale().subscribeVisibleLogicalRangeChange(updateRangeBand);
 
     const candlesByTime = new Map(candles.map((candle) => [toChartTime(candle.time), candle]));
     chart.subscribeCrosshairMove((param) => {
@@ -184,6 +233,8 @@ function MissionChart({
       resizeObserver.disconnect();
       window.removeEventListener("orientationchange", resizeChart);
       window.removeEventListener("resize", resizeChart);
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(updateRangeBand);
+      rangeBand.remove();
       chart.remove();
     };
   }, [candles, isLoading, onSelect]);
@@ -287,6 +338,10 @@ export function HeroCommand({
               <span>Implied valuation</span>
               <strong>{formatValuation(activeValuation)}</strong>
               <small>{activeTime}</small>
+              <small className="valuation-range">
+                Reported IPO valuation {formatValuation(REPORTED_IPO_VALUATION_RANGE.low)}-
+                {formatValuation(REPORTED_IPO_VALUATION_RANGE.high)}
+              </small>
               <p className="valuation-tooltip" role="tooltip">
                 Uses the preliminary S-1 common share base: 6.932B Class A plus 5.603B Class B shares, or 12.535B
                 shares before the offering. It excludes IPO shares, options, RSUs, and other dilution.
