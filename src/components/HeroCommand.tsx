@@ -5,6 +5,7 @@ import {
   createChart,
   CrosshairMode,
   LineSeries,
+  type AutoscaleInfoProvider,
   type CandlestickData,
   type LineData,
   type UTCTimestamp,
@@ -60,6 +61,19 @@ function toChartTime(time: number) {
 const REPORTED_IPO_PRICE_RANGE = {
   low: calculatePriceFromValuation(REPORTED_IPO_VALUATION_RANGE.low),
   high: calculatePriceFromValuation(REPORTED_IPO_VALUATION_RANGE.high),
+};
+
+const includeReportedIpoRangeInScale: AutoscaleInfoProvider = (original) => {
+  const info = original();
+  if (!info?.priceRange) return info;
+
+  return {
+    ...info,
+    priceRange: {
+      minValue: Math.min(info.priceRange.minValue, REPORTED_IPO_PRICE_RANGE.low),
+      maxValue: Math.max(info.priceRange.maxValue, REPORTED_IPO_PRICE_RANGE.high),
+    },
+  };
 };
 
 function MissionChart({
@@ -153,6 +167,7 @@ function MissionChart({
       priceLineColor: "rgba(67, 240, 154, 0.55)",
       priceLineWidth: 1,
       lastValueVisible: true,
+      autoscaleInfoProvider: includeReportedIpoRangeInScale,
     });
 
     const chartData: CandlestickData[] = candles.map((candle) => ({
@@ -187,7 +202,8 @@ function MissionChart({
     rangeBand.appendChild(rangeLabel);
     container.appendChild(rangeBand);
 
-    const updateRangeBand = () => {
+    let rangeBandFrame = 0;
+    const updateRangeBandNow = () => {
       const highY = series.priceToCoordinate(REPORTED_IPO_PRICE_RANGE.high);
       const lowY = series.priceToCoordinate(REPORTED_IPO_PRICE_RANGE.low);
       if (highY === null || lowY === null) {
@@ -198,6 +214,10 @@ function MissionChart({
       rangeBand.hidden = false;
       rangeBand.style.top = `${Math.min(highY, lowY)}px`;
       rangeBand.style.height = `${Math.max(4, Math.abs(lowY - highY))}px`;
+    };
+    const updateRangeBand = () => {
+      window.cancelAnimationFrame(rangeBandFrame);
+      rangeBandFrame = window.requestAnimationFrame(updateRangeBandNow);
     };
 
     chart.timeScale().fitContent();
@@ -234,6 +254,7 @@ function MissionChart({
       window.removeEventListener("orientationchange", resizeChart);
       window.removeEventListener("resize", resizeChart);
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(updateRangeBand);
+      window.cancelAnimationFrame(rangeBandFrame);
       rangeBand.remove();
       chart.remove();
     };
