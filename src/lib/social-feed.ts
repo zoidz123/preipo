@@ -98,6 +98,10 @@ function cleanText(text: string): string {
     .trim();
 }
 
+function shouldHidePost(text: string): boolean {
+  return /(^|\s)@grok\b/i.test(text);
+}
+
 export async function fetchSocialFeed({
   limit = 12,
   queryPreset = "core",
@@ -164,6 +168,7 @@ export async function fetchSocialFeed({
       mediaUrl: extractMediaUrl(tweet, mediaMap),
     };
   }).filter((post) => (verifiedOnly ? post.verified : true))
+    .filter((post) => !shouldHidePost(post.text))
     .filter((post) => post.metrics.likes >= minLikes)
     .slice(0, limit);
 }
