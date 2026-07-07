@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { HeroCommand } from "./components/HeroCommand";
 import { ResearchSections } from "./components/ResearchSections";
+import { SiteHeader, type AppView } from "./components/SiteHeader";
 import { SpaceXPillars } from "./components/SpaceXPillars";
-import { SocialFeedSection } from "./components/SocialFeedSection";
+import { UpcomingIpos } from "./components/UpcomingIpos";
 import { fallbackCompanies, fetchTopUsEquities, type RankedCompany } from "./lib/equities";
-import { fetchSocialFeed, type SocialFeedPost, type SocialFeedState } from "./lib/social-feed";
 import {
   calculateImpliedValuation,
   fetchSpcxCandles,
@@ -29,6 +29,7 @@ const SPCX_CONTEXT_POLL_MS = 15_000;
 const SPCX_CANDLES_POLL_MS = 60_000;
 
 export default function App() {
+  const [view, setView] = useState<AppView>("upcoming");
   const [candleSeries, setCandleSeries] = useState<Record<SpcxTimeframe, SpcxCandle[]>>(EMPTY_CANDLE_SERIES);
   const [timeframe, setTimeframe] = useState<SpcxTimeframe>("1W");
   const [marketContext, setMarketContext] = useState<SpcxMarketContext>({
@@ -37,8 +38,6 @@ export default function App() {
     openInterest: null,
   });
   const [topCompanies, setTopCompanies] = useState<RankedCompany[]>(fallbackCompanies);
-  const [socialPosts, setSocialPosts] = useState<SocialFeedPost[]>([]);
-  const [socialState, setSocialState] = useState<SocialFeedState>("loading");
   const [dataState, setDataState] = useState<DataState>("loading");
 
   useEffect(() => {
@@ -126,37 +125,6 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const syncSocialFeed = () => {
-      if (document.visibilityState === "hidden") return;
-
-      fetchSocialFeed({ limit: 50, verifiedOnly: true, minLikes: 100 })
-        .then((posts) => {
-          if (cancelled) return;
-          setSocialPosts(posts);
-          setSocialState(posts.length > 0 ? "live" : "empty");
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setSocialPosts([]);
-            setSocialState("fallback");
-          }
-        });
-    };
-
-    syncSocialFeed();
-    const timer = window.setInterval(syncSocialFeed, 2 * 60 * 1000);
-    document.addEventListener("visibilitychange", syncSocialFeed);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", syncSocialFeed);
-    };
-  }, []);
-
   const candles = candleSeries[timeframe];
   const latestClose = useMemo(
     () => marketContext.markPrice ?? getLatestClose(candleSeries["1D"]) ?? getLatestClose(candles),
@@ -166,17 +134,23 @@ export default function App() {
 
   return (
     <main>
-      <HeroCommand
-        candles={candles}
-        dataState={dataState}
-        latestClose={latestClose}
-        marketContext={marketContext}
-        timeframe={timeframe}
-        onTimeframeChange={setTimeframe}
-      />
-      <SocialFeedSection posts={socialPosts} state={socialState} />
-      <SpaceXPillars />
-      <ResearchSections companies={topCompanies} impliedValuation={impliedValuation} />
+      <SiteHeader view={view} onViewChange={setView} />
+      {view === "upcoming" ? (
+        <UpcomingIpos />
+      ) : (
+        <>
+          <HeroCommand
+            candles={candles}
+            dataState={dataState}
+            latestClose={latestClose}
+            marketContext={marketContext}
+            timeframe={timeframe}
+            onTimeframeChange={setTimeframe}
+          />
+          <SpaceXPillars />
+          <ResearchSections companies={topCompanies} impliedValuation={impliedValuation} />
+        </>
+      )}
     </main>
   );
 }

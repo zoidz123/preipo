@@ -18,7 +18,6 @@ import {
   calculatePriceFromValuation,
   formatCurrency,
   formatValuation,
-  IPO_REFERENCE_DATE,
   REPORTED_IPO_VALUATION_RANGE,
   SPCX_TIMEFRAMES,
   type SpcxMarketContext,
@@ -34,16 +33,6 @@ type HeroCommandProps = {
   timeframe: SpcxTimeframe;
   onTimeframeChange: (timeframe: SpcxTimeframe) => void;
 };
-
-function getCountdownParts(now = Date.now()) {
-  const target = new Date(IPO_REFERENCE_DATE).getTime();
-  const distance = Math.max(0, target - now);
-  const days = Math.floor(distance / 86_400_000);
-  const hours = Math.floor((distance % 86_400_000) / 3_600_000);
-  const minutes = Math.floor((distance % 3_600_000) / 60_000);
-  const seconds = Math.floor((distance % 60_000) / 1000);
-  return { days, hours, minutes, seconds };
-}
 
 function formatTimestamp(time: number) {
   return new Intl.DateTimeFormat("en-US", {
@@ -304,50 +293,27 @@ export function HeroCommand({
   timeframe,
   onTimeframeChange,
 }: HeroCommandProps) {
-  const [now, setNow] = useState(Date.now());
   const [selectedCandle, setSelectedCandle] = useState<SpcxCandle | null>(null);
-  const countdown = useMemo(() => getCountdownParts(now), [now]);
   const activeClose = selectedCandle?.close ?? latestClose;
   const activeValuation = useMemo(() => calculateImpliedValuation(activeClose), [activeClose]);
   const activeTime = selectedCandle ? formatTimestamp(selectedCandle.time) : "Latest close";
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   return (
     <section className="hero">
       <img className="hero-art" src={heroArtwork} alt="" />
       <div className="hero-vignette" />
 
-      <div className="site-chrome">
-        <span>PREIPO</span>
-        <b>PREIPO.fyi</b>
-      </div>
-      <div className="preipo-explainer">
-        <p>
-          PREIPO tracks pre-listing companies through 24/7 cash-settled perpetual futures trading on Hyperliquid.
-        </p>
-      </div>
-
       <div className="hero-grid">
         <section className="instrument-deck angular">
           <div className="hero-head">
             <h1 className="deck-title">
               <span>SpaceX</span>
-              <small>SPCX Pre-IPO Profile</small>
+              <small>SPCX Profile</small>
             </h1>
           </div>
-          <div className="countdown-strip" tabIndex={0}>
-            <span>Listing countdown</span>
-            <strong>
-              {String(countdown.days).padStart(2, "0")}D : {String(countdown.hours).padStart(2, "0")}H :{" "}
-              {String(countdown.minutes).padStart(2, "0")}M : {String(countdown.seconds).padStart(2, "0")}S
-            </strong>
-            <p className="countdown-tooltip" role="tooltip">
-              Reference date: June 12, 2026. This is not a confirmed IPO date; final listing timing may differ.
-            </p>
+          <div className="countdown-strip listed">
+            <span>Listing status</span>
+            <strong className="listed-flag">Public</strong>
           </div>
           <div className="market-primary">
             <div>
