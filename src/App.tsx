@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { AboutPreipo } from "./components/AboutPreipo";
 import { HeroCommand } from "./components/HeroCommand";
 import { ResearchSections } from "./components/ResearchSections";
 import { SiteHeader, type AppView } from "./components/SiteHeader";
@@ -151,6 +152,7 @@ export default function App() {
           <ResearchSections companies={topCompanies} impliedValuation={impliedValuation} />
         </>
       )}
+      <AboutPreipo />
     </main>
   );
 }
